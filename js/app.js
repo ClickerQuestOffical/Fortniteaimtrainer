@@ -629,6 +629,7 @@ function startAimTest(test, onDone) {
     movementPath: [],
     meaningfulMovementAt: 0,
     lastAngularError: Infinity,
+    recoil: 0,
   };
 
   testRuntime = runtime;
@@ -983,6 +984,7 @@ function testFrame(runtime, now) {
         if (stableElapsed >= runtime.acquireDuration) {
           recordAcquisition(runtime, target, now);
           target.hit = true;
+          runtime.recoil = 1;
           runtime.feedbackUntil = now + 180;
           runtime.currentIndex += 1;
           qs('#testTargets').textContent =
@@ -1055,6 +1057,11 @@ function drawTrainingField(runtime, now = performance.now()) {
     runtime.feedback,
   );
 
+  // Subtle first-person weapon model. It never controls aim; it is
+  // only a visual anchor so the field reads like a shooter range.
+  renderer.drawWeapon('rifle', runtime.recoil);
+  runtime.recoil *= 0.86;
+
   // Small dynamic state indicator.
   const c = renderer.ctx;
   const cx = renderer.width * 0.5;
@@ -1106,22 +1113,30 @@ function updateMovingTarget(runtime, now) {
     0.022 + progress * 0.018;
 
   if (runtime.test.type === 'trackX') {
-    target.worldYaw = normalizeYaw(
-      target.worldYaw +
-        Math.sin(now * 0.0012) *
-        safeNumber(target.velocity, 50) *
-        speedScale *
-        dt,
+    const safeYaw = Math.min(29, safeNumber(state.settings.fov, 90) * 0.33);
+    target.worldYaw = Math.max(
+      -safeYaw,
+      Math.min(
+        safeYaw,
+        signedAngularDifference(target.worldYaw, 0) +
+          Math.sin(now * 0.0012) *
+          safeNumber(target.velocity, 50) *
+          speedScale *
+          dt,
+      ),
     );
   } else if (runtime.test.type === 'trackY') {
+    const aspectParts = String(state.settings.aspect || '16:9').split(':').map(Number);
+    const aspect = aspectParts[1] ? aspectParts[0] / aspectParts[1] : 16 / 9;
+    const safePitch = Math.min(14, (safeNumber(state.settings.fov, 90) * 0.5 / Math.max(0.5, aspect)) * 0.31);
     target.worldPitch = clamp(
       target.worldPitch +
         Math.cos(now * 0.001) *
         safeNumber(target.velocity, 50) *
         speedScale *
         dt,
-      -75,
-      75,
+      -safePitch,
+      safePitch,
     );
   }
 

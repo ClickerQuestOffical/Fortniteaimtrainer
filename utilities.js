@@ -1,0 +1,16 @@
+export const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+export const lerp=(a,b,t)=>a+(b-a)*t;
+export const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
+export const median=a=>{if(!a.length)return 0;const b=[...a].sort((x,y)=>x-y),m=Math.floor(b.length/2);return b.length%2?b[m]:(b[m-1]+b[m])/2};
+export const quantile=(a,q)=>{if(!a.length)return 0;const b=[...a].sort((x,y)=>x-y),p=(b.length-1)*q,i=Math.floor(p),f=p-i;return b[i]!==undefined?b[i]+(b[i+1]!==undefined?(b[i+1]-b[i])*f:0):0};
+export const std=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(mean(a.map(v=>(v-m)**2)))};
+export const mad=a=>{const m=median(a);return median(a.map(v=>Math.abs(v-m)))};
+export const trimOutliers=a=>{if(a.length<5)return [...a];const m=median(a),d=mad(a)||1;return a.filter(v=>Math.abs(v-m)<=3.5*d)};
+export const normalize=(v,min,max)=>max===min?.5:clamp((v-min)/(max-min),0,1);
+export const format=(v,d=1)=>Number(v||0).toFixed(d);
+export const nowIso=()=>new Date().toISOString();
+export const uuid=()=>crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+export const seeded=(seed=1)=>{let t=seed>>>0;return()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return((x^x>>>14)>>>0)/4294967296}};
+export const randomNormal=r=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+export const percent=(a,b)=>b===0?0:a/b*100;

@@ -365,6 +365,124 @@ export class AimRenderer {
     c.restore();
   }
 
+  drawWeapon(weapon = 'rifle', recoil = 0) {
+    const c = this.ctx;
+    const w = this.width;
+    const h = this.height;
+    const cx = w * 0.5;
+    const baseY = h + 14;
+    const r = clamp(Number(recoil) || 0, -1, 1);
+    const kick = r * 9;
+
+    c.save();
+    c.translate(cx, baseY + kick);
+
+    // Soft first-person weapon shadow.
+    c.fillStyle = 'rgba(0,0,0,.28)';
+    c.beginPath();
+    c.ellipse(0, -28, Math.min(w, h) * 0.18, 20, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // Left hand / glove silhouette.
+    c.fillStyle = '#243447';
+    c.beginPath();
+    c.roundRect(-105, -75, 52, 48, 12);
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.08)';
+    c.lineWidth = 2;
+    c.stroke();
+
+    // Right hand / glove silhouette.
+    c.fillStyle = '#243447';
+    c.beginPath();
+    c.roundRect(53, -75, 52, 48, 12);
+    c.fill();
+    c.stroke();
+
+    // Main receiver.
+    const receiver = c.createLinearGradient(-76, 0, 76, -100);
+    receiver.addColorStop(0, '#1a2634');
+    receiver.addColorStop(.55, '#3b4d61');
+    receiver.addColorStop(1, '#1a2531');
+
+    c.fillStyle = receiver;
+    c.beginPath();
+    c.moveTo(-70, -38);
+    c.lineTo(-42, -92);
+    c.lineTo(49, -100);
+    c.lineTo(78, -55);
+    c.lineTo(59, -24);
+    c.lineTo(-45, -18);
+    c.closePath();
+    c.fill();
+
+    c.strokeStyle = 'rgba(255,255,255,.14)';
+    c.lineWidth = 2;
+    c.stroke();
+
+    // Barrel.
+    c.fillStyle = '#17212c';
+    c.beginPath();
+    c.roundRect(-11, -143, 22, 65, 5);
+    c.fill();
+    c.strokeStyle = '#536b81';
+    c.lineWidth = 1.5;
+    c.stroke();
+
+    // Muzzle.
+    c.fillStyle = '#0e151d';
+    c.beginPath();
+    c.roundRect(-15, -151, 30, 13, 4);
+    c.fill();
+
+    // Sight.
+    c.fillStyle = '#111a23';
+    c.beginPath();
+    c.roundRect(-12, -112, 24, 18, 5);
+    c.fill();
+
+    c.strokeStyle = 'rgba(119,167,255,.7)';
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(0, -108);
+    c.lineTo(0, -99);
+    c.stroke();
+
+    // Magazine.
+    c.fillStyle = '#111923';
+    c.beginPath();
+    c.moveTo(-28, -22);
+    c.lineTo(18, -19);
+    c.lineTo(12, 46);
+    c.lineTo(-15, 53);
+    c.lineTo(-31, 5);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.08)';
+    c.stroke();
+
+    // Stock / rear body.
+    c.fillStyle = '#202d3b';
+    c.beginPath();
+    c.moveTo(-112, -57);
+    c.lineTo(-76, -81);
+    c.lineTo(-48, -48);
+    c.lineTo(-66, -8);
+    c.lineTo(-112, 5);
+    c.closePath();
+    c.fill();
+
+    // Small accent light to make the model readable.
+    c.fillStyle = '#77a7ff';
+    c.globalAlpha = .65;
+    c.beginPath();
+    c.roundRect(-37, -72, 18, 4, 2);
+    c.fill();
+
+    c.globalAlpha = 1;
+    c.restore();
+  }
+
   drawCrosshair(style = 'cross') {
     const c = this.ctx;
     const cx = this.width * 0.5;

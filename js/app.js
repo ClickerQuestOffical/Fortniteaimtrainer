@@ -622,7 +622,7 @@ function startAimTest(test, onDone) {
     pointerLocked: false,
     startedInput: false,
     acquireStartedAt: 0,
-    acquireDuration: 110,
+    acquireDuration: 175,
     feedback: 0,
     feedbackUntil: 0,
     pointerFallback: false,
@@ -882,18 +882,18 @@ function startAimTest(test, onDone) {
 
 function getTestPrompt(test) {
   if (test.type === 'trackX' || test.type === 'trackY') {
-    return 'Keep your crosshair on the moving target.';
+    return 'Keep your crosshair on the moving target. Hold it there naturally.';
   }
 
   if (test.type === 'switch') {
-    return 'Move to the lit target. Acquire it cleanly, then switch.';
+    return 'Move to the glowing target. Stabilize on its center, then switch.';
   }
 
   if (test.type === 'flick' || test.type === 'flickSmall' || test.type === 'random') {
-    return 'Flick to the target and let the system detect the acquisition.';
+    return 'Move quickly to the glowing target — no click needed.';
   }
 
-  return 'Move your crosshair onto the target and stabilize.';
+  return 'Aim at the glowing target and hold steady. No click needed.';
 }
 
 function getActiveInstruction(test) {
@@ -1028,6 +1028,10 @@ function drawTrainingField(runtime, now = performance.now()) {
 
   const target = runtime.activeTarget;
 
+  if (runtime.movementPath.length > 1) {
+    renderer.drawTrail(runtime.movementPath);
+  }
+
   if (target && !target.hit) {
     target.currentError = Math.hypot(
       angularDistance(runtime.camera.yaw, target.worldYaw),
@@ -1041,10 +1045,6 @@ function drawTrainingField(runtime, now = performance.now()) {
       state.settings.fov,
       true,
     );
-  }
-
-  if (runtime.movementPath.length > 1) {
-    renderer.drawTrail(runtime.movementPath);
   }
 
   renderer.drawCrosshair(

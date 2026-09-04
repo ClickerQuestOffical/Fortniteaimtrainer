@@ -17,75 +17,90 @@ export function makeScenario(test, settings, seed = 1) {
   const r = seeded(seed);
   const targets = [];
 
+  const fov = Number(settings?.fov || 90);
   const aspectParts = String(settings?.aspect || '16:9').split(':').map(Number);
   const aspect = aspectParts[1] ? aspectParts[0] / aspectParts[1] : 16 / 9;
-  const verticalFov = Number(settings?.fov || 90) / Math.max(0.5, aspect);
-  const maxYaw = Math.min(41, Number(settings?.fov || 90) * 0.5 * 0.82);
-  const maxPitch = Math.min(19.5, verticalFov * 0.5 * 0.78);
-  const comfortableAngles = [-maxYaw, -maxYaw * 0.78, -maxYaw * 0.55, -maxYaw * 0.32, -maxYaw * 0.15, maxYaw * 0.15, maxYaw * 0.32, maxYaw * 0.55, maxYaw * 0.78, maxYaw];
 
-  for (let i = 0; i < (test.targets || 1); i++) {
-    let a;
-    let p;
+  // These bounds are intentionally conservative so normal aim drills
+  // never require the player to leave the visible screen or "turn" around.
+  const maxYaw = Math.min(30, fov * 0.34);
+  const maxPitch = Math.min(15, (fov * 0.5 / Math.max(0.5, aspect)) * 0.34);
+
+  const screenAngles = [
+    [-0.84, -0.45],
+    [-0.60, -0.12],
+    [-0.32, 0.32],
+    [0.02, -0.50],
+    [0.26, 0.20],
+    [0.54, -0.30],
+    [0.80, 0.08],
+    [-0.74, 0.48],
+    [-0.30, -0.70],
+    [0.34, 0.65],
+    [0.76, 0.47],
+    [-0.12, 0.12],
+  ];
+
+  const count = test.targets || 1;
+
+  for (let i = 0; i < count; i += 1) {
+    let x;
+    let y;
     let radius;
-    let velocity;
-    let depth;
+    let velocity = 0;
+    let depth = 0.86 + r() * 0.24;
 
     if (test.type === 'trackX' || test.type === 'trackY') {
-      a = test.type === 'trackX' ? 0 : (r() > 0.5 ? 12 : -12);
-      p = (r() - 0.5) * 10;
-      radius = 22;
+      x = test.type === 'trackX' ? 0 : (r() - 0.5) * 0.4;
+      y = (r() - 0.5) * 0.55;
+      radius = 26;
       velocity = 48 + 45 * r();
-      depth = 0.9 + r() * 0.35;
     } else {
-      if (test.type === 'largeFlick') {
-        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 5;
-        p = (r() - 0.5) * maxPitch * 2;
-      } else if (test.type === 'smallFlick') {
-        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 4;
-        p = (r() - 0.5) * maxPitch * 1.7;
-      } else if (test.type === 'random') {
-        a = comfortableAngles[Math.floor(r() * comfortableAngles.length)] + randomNormal(r) * 8;
-        p = (r() - 0.5) * maxPitch * 2;
-      } else if (test.type === 'long') {
-        a = comfortableAngles[Math.floor(r() * comfortableAngles.length)] + randomNormal(r) * 5;
-        p = (r() - 0.5) * maxPitch * 1.8;
-      } else {
-        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 4;
-        p = (r() - 0.5) * maxPitch * 1.6;
+      const slot = screenAngles[i % screenAngles.length];
+      x = slot[0] + randomNormal(r) * 0.055;
+      y = slot[1] + randomNormal(r) * 0.05;
+
+      if (test.type === 'random') {
+        x = (r() * 1.66) - 0.83;
+        y = (r() * 1.40) - 0.70;
       }
 
-      if (test.type === 'micro') radius = 11;
-      else if (test.type === 'flickSmall') radius = 10;
-      else if (test.type === 'close') radius = 28;
-      else if (test.type === 'largeFlick') radius = 19;
-      else if (test.type === 'long') radius = 8;
-      else radius = 16;
+      if (test.type === 'largeFlick') {
+        radius = 20;
+      } else if (test.type === 'flickSmall') {
+        radius = 12;
+      } else if (test.type === 'micro') {
+        radius = 11;
+      } else if (test.type === 'close') {
+        radius = 30;
+      } else if (test.type === 'long') {
+        radius = 9;
+      } else {
+        radius = 17;
+      }
 
       if (test.type === 'fatigue') {
-        const progress = i / Math.max(1, test.targets - 1);
-        radius = clamp(30 - progress * 18, 10, 30);
-        p *= 0.85;
+        const progress = i / Math.max(1, count - 1);
+        radius = clamp(29 - progress * 17, 11, 29);
       }
 
-      // Pseudo-depth affects target scale/visual perspective, not sensitivity math.
-      depth = 0.72 + r() * 0.62;
-      velocity = 0;
+      // Make the pseudo-depth visual only; it does not alter aim math.
+      depth = 0.78 + r() * 0.5;
     }
 
-    a = clamp(a, -maxYaw, maxYaw);
-    p = clamp(p, -maxPitch, maxPitch);
+    x = clamp(x, -0.86, 0.86);
+    y = clamp(y, -0.72, 0.72);
 
     targets.push({
       id: i,
-      spawnTime: i * 900 + 300,
-      spawnYaw: a,
-      spawnPitch: p,
+      spawnTime: i * 850 + 250,
+      spawnYaw: x * maxYaw,
+      spawnPitch: y * maxPitch,
       radius,
       depth,
       acquisitionRange: test.type === 'micro' || test.type === 'long' ? 34 : 42,
       velocity,
-      direction: a,
+      direction: test.type === 'trackY' ? (r() > 0.5 ? 90 : 270) : (r() > 0.5 ? 0 : 180),
       type: test.type === 'trackX' || test.type === 'trackY' ? 'moving' : 'static',
     });
   }

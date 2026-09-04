@@ -1,19 +1,94 @@
-import {seeded,randomNormal,clamp} from './utilities.js';
-export const TESTS=[
-{id:'micro',name:'Micro Precision',short:'Micro',desc:'Small static targets. Measures first-shot error, correction burden, and stable precision.',duration:35,type:'static',targets:28},
-{id:'largeFlick',name:'Large Flick',short:'Large Flick',desc:'Fast, unpredictable angle changes. Measures acquisition speed and overshoot.',duration:32,type:'flick',targets:24},
-{id:'smallFlick',name:'Small Flick',short:'Small Flick',desc:'Medium-to-large angular switches with small targets. Measures stopping control.',duration:32,type:'flickSmall',targets:24},
-{id:'horizontal',name:'Horizontal Tracking',short:'H Track',desc:'Constant and variable horizontal target motion. Measures smooth pursuit and jitter.',duration:30,type:'trackX',targets:1},
-{id:'vertical',name:'Vertical Tracking',short:'V Track',desc:'Vertical movement isolates Y-axis control.',duration:30,type:'trackY',targets:1},
-{id:'switching',name:'Reactive Target Switching',short:'Switching',desc:'Sequential target swaps measure transition time and path efficiency.',duration:30,type:'switch',targets:30},
-{id:'random',name:'Random Angle Flick',short:'Angle Flick',desc:'Targets span all major direction sectors plus seeded random angles.',duration:35,type:'random',targets:30},
-{id:'close',name:'Close Range Speed',short:'Close Speed',desc:'Large nearby targets with fast changes. Measures high-speed acquisition.',duration:28,type:'close',targets:30},
-{id:'long',name:'Long Range Precision',short:'Long Precision',desc:'Small distant targets emphasize controlled micro-adjustment.',duration:35,type:'long',targets:26},
-{id:'fatigue',name:'Fatigue / Consistency',short:'Fatigue',desc:'A longer mixed drill reveals performance drift and late-session instability.',duration:55,type:'fatigue',targets:44}
+import { seeded, randomNormal, clamp } from './utilities.js';
+
+export const TESTS = [
+  { id:'micro', name:'Micro Precision', short:'Micro', desc:'Small targets at comfortable screen angles. Move onto the center and stabilize.', duration:35, type:'static', targets:28 },
+  { id:'largeFlick', name:'Large Flick', short:'Large Flick', desc:'Fast directional changes. Snap to the target and stop cleanly.', duration:32, type:'flick', targets:24 },
+  { id:'smallFlick', name:'Small Flick', short:'Small Flick', desc:'Medium-angle precision switches. Control the final movement.', duration:32, type:'flickSmall', targets:24 },
+  { id:'horizontal', name:'Horizontal Tracking', short:'H Track', desc:'Keep the crosshair on the moving target.', duration:30, type:'trackX', targets:1 },
+  { id:'vertical', name:'Vertical Tracking', short:'V Track', desc:'Keep the crosshair on the moving target.', duration:30, type:'trackY', targets:1 },
+  { id:'switching', name:'Reactive Target Switching', short:'Switching', desc:'Acquire each highlighted target, then transition immediately.', duration:30, type:'switch', targets:30 },
+  { id:'random', name:'Random Angle Flick', short:'Angle Flick', desc:'Targets appear across varied directions while staying inside the useful visual field.', duration:35, type:'random', targets:30 },
+  { id:'close', name:'Close Range Speed', short:'Close Speed', desc:'Large nearby targets with rapid changes.', duration:28, type:'close', targets:30 },
+  { id:'long', name:'Long Range Precision', short:'Long Precision', desc:'Small distant-feeling targets that reward controlled movement.', duration:35, type:'long', targets:26 },
+  { id:'fatigue', name:'Fatigue / Consistency', short:'Fatigue', desc:'A longer mixed drill reveals late-session instability.', duration:55, type:'fatigue', targets:44 },
 ];
-export function makeScenario(test,settings,seed=1){const r=seeded(seed);const targets=[];let yaw=0,pitch=0;const angular=[0,15,30,45,60,90,120,135,150,180];for(let i=0;i<(test.targets||1);i++){
- let a,p,rad,vel;
- if(test.type==='trackX'||test.type==='trackY'){a=test.type==='trackX'?0:(r()>.5?90:-90);p=(r()-.5)*8;rad=22;vel=35+40*r()}
- else{a=(angular[i%angular.length]+(r()-.5)*10)%360;p=(r()-.5)*70;rad=(test.type==='long'||test.type==='micro'||test.type==='flickSmall'?8: test.type==='close'?30:18);if(test.type==='largeFlick')rad=22;if(test.type==='fatigue')rad=clamp(34-(i/test.targets)*22,9,34);vel=0}
- const dist=1; yaw+=Math.cos(a*Math.PI/180)*dist;pitch+=Math.sin(a*Math.PI/180)*dist;targets.push({id:i,spawnTime:i*900+300,spawnYaw:((a+360)%360),spawnPitch:clamp(p,-72,72),radius:rad,velocity:vel,direction:a,type:test.type==='trackX'||test.type==='trackY'?'moving':'static'});
- }return targets}
+
+export function makeScenario(test, settings, seed = 1) {
+  const r = seeded(seed);
+  const targets = [];
+
+  const aspectParts = String(settings?.aspect || '16:9').split(':').map(Number);
+  const aspect = aspectParts[1] ? aspectParts[0] / aspectParts[1] : 16 / 9;
+  const verticalFov = Number(settings?.fov || 90) / Math.max(0.5, aspect);
+  const maxYaw = Math.min(41, Number(settings?.fov || 90) * 0.5 * 0.82);
+  const maxPitch = Math.min(19.5, verticalFov * 0.5 * 0.78);
+  const comfortableAngles = [-maxYaw, -maxYaw * 0.78, -maxYaw * 0.55, -maxYaw * 0.32, -maxYaw * 0.15, maxYaw * 0.15, maxYaw * 0.32, maxYaw * 0.55, maxYaw * 0.78, maxYaw];
+
+  for (let i = 0; i < (test.targets || 1); i++) {
+    let a;
+    let p;
+    let radius;
+    let velocity;
+    let depth;
+
+    if (test.type === 'trackX' || test.type === 'trackY') {
+      a = test.type === 'trackX' ? 0 : (r() > 0.5 ? 12 : -12);
+      p = (r() - 0.5) * 10;
+      radius = 22;
+      velocity = 48 + 45 * r();
+      depth = 0.9 + r() * 0.35;
+    } else {
+      if (test.type === 'largeFlick') {
+        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 5;
+        p = (r() - 0.5) * maxPitch * 2;
+      } else if (test.type === 'smallFlick') {
+        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 4;
+        p = (r() - 0.5) * maxPitch * 1.7;
+      } else if (test.type === 'random') {
+        a = comfortableAngles[Math.floor(r() * comfortableAngles.length)] + randomNormal(r) * 8;
+        p = (r() - 0.5) * maxPitch * 2;
+      } else if (test.type === 'long') {
+        a = comfortableAngles[Math.floor(r() * comfortableAngles.length)] + randomNormal(r) * 5;
+        p = (r() - 0.5) * maxPitch * 1.8;
+      } else {
+        a = comfortableAngles[i % comfortableAngles.length] + randomNormal(r) * 4;
+        p = (r() - 0.5) * maxPitch * 1.6;
+      }
+
+      if (test.type === 'micro') radius = 11;
+      else if (test.type === 'flickSmall') radius = 10;
+      else if (test.type === 'close') radius = 28;
+      else if (test.type === 'largeFlick') radius = 19;
+      else if (test.type === 'long') radius = 8;
+      else radius = 16;
+
+      if (test.type === 'fatigue') {
+        const progress = i / Math.max(1, test.targets - 1);
+        radius = clamp(30 - progress * 18, 10, 30);
+        p *= 0.85;
+      }
+
+      // Pseudo-depth affects target scale/visual perspective, not sensitivity math.
+      depth = 0.72 + r() * 0.62;
+      velocity = 0;
+    }
+
+    a = clamp(a, -maxYaw, maxYaw);
+    p = clamp(p, -maxPitch, maxPitch);
+
+    targets.push({
+      id: i,
+      spawnTime: i * 900 + 300,
+      spawnYaw: a,
+      spawnPitch: p,
+      radius,
+      depth,
+      acquisitionRange: test.type === 'micro' || test.type === 'long' ? 34 : 42,
+      velocity,
+      direction: a,
+      type: test.type === 'trackX' || test.type === 'trackY' ? 'moving' : 'static',
+    });
+  }
+
+  return targets;
+}

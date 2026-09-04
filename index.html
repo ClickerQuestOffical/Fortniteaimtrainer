@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1018">
+  <title>Fortnite Aim Sensitivity Finder</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+  <header class="topbar">
+    <a class="brand" href="#landing" data-route="landing"><span class="brand-mark">AF</span><span>AimFoundry</span></a>
+    <nav class="nav" aria-label="Primary">
+      <button data-route="dashboard">Dashboard</button>
+      <button data-route="tests">Tests</button>
+      <button data-route="history">History</button>
+      <button data-route="settings">Settings</button>
+    </nav>
+    <div class="top-status"><span id="globalStatusDot" class="status-dot"></span><span id="globalStatus">Ready</span></div>
+  </header>
+
+  <main id="app"></main>
+
+  <div id="testOverlay" class="test-overlay hidden">
+    <div class="test-topbar">
+      <div><span id="testName">Test</span><span id="testPhase" class="muted"></span></div>
+      <div class="test-stats"><span id="testTimer">00.0</span><span id="testTargets">0 / 0</span><span id="testFps">-- FPS</span></div>
+    </div>
+    <canvas id="aimCanvas"></canvas>
+    <div class="test-crosshair" aria-hidden="true"><span></span></div>
+    <div id="pointerHint" class="pointer-hint">Click the training field to activate mouse control</div>
+    <div id="pausePanel" class="pause-panel hidden">
+      <div class="pause-card"><div class="eyebrow">TEST PAUSED</div><h2 id="pauseTitle">Paused</h2><p>Pointer lock is released and paused time is excluded from your performance metrics.</p><div class="button-row"><button class="btn primary" id="resumeBtn">Resume</button><button class="btn ghost" id="restartTestBtn">Restart</button><button class="btn ghost" id="exitTestBtn">Exit Test</button></div></div>
+    </div>
+    <div class="test-bottom"><div id="testInstruction">Stay centered, react naturally, and prioritize control.</div><div id="testHint">ESC to pause</div></div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
